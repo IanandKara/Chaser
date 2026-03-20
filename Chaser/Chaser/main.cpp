@@ -3,69 +3,87 @@
 
 using namespace std;
 
-class Point // Класс точка, хранит координаты, вектора и угол.
+class Point // Класс точка, хранит координаты и вектора
 {
 public:
-	float x, y, Vx, Vy, V, Angle;
+	double x, y, Vx, Vy;
 
 	void Update()
 	{
 		cin >> x >> y >> Vx >> Vy;
 	}
+};
 
-	void UpdateAngle(float dx, float dy)
+class Chaser : public Point // Класс преследователя
+{
+public:
+	double V, Angle;
+
+	void UpdateAngle(double dx, double dy)
 	{
 		Angle = atan2(dy, dx); // Функция, вычисляет угол в рад.
 	}
 };
 
+class Target : public Point // Класс цели
+{
+public:
+	double Distance, dx, dy;
+	bool IsChased = false;
+	
+	void Update(Chaser &chaser)
+	{
+		Point::Update(); 
+		cin >> IsChased; // Поймана ли цель
+
+		dx = x - chaser.x;
+		dy = y - chaser.y;
+		Distance = sqrt((dx * dx + dy * dy)); // Расстояние от преследователя до цели, через гипотенузу
+	}
+};
+
+
+
 int main()
 {
-	Point Chaser;  // Преследователь
-	float Time, status;
+	Chaser chaser;  // Преследователь
+	double Time;
 	int N, i;
 	bool ChasedAll = false;
-	
 
-	cin >> Chaser.V >> N >> Time;  // Вводные данные
-	Chaser.Update();               // Обновляем данные преследователя
+	cin >> chaser.V >> N;  // Вводим начальные данные
+	Target* Targets = new Target[N]; // Массив целей
 
-	Point* Targets = new Point[N]; // На всякий случай массив целей, в будущем через него будет искаться ближайшая из множества целей
-	for (i = 0; i < N; i++)        // Обновляем данные целей
-		Targets[i].Update();
-	Point* CurrentTarget = Targets; // Указатель на массив целей, будет указывать на ближайшую к преследователю
-
-	float dx = CurrentTarget->x - Chaser.x; // Разница между координатами для поиска расстояния и угла
-	float dy = CurrentTarget->y - Chaser.y;
-	Chaser.UpdateAngle(dx, dy);
-	float Distance = sqrt((dx * dx + dy * dy)); // Расстояние между целью и преследователем
-
-	cout << Chaser.Angle << endl; // Упр. команды
-	cout << ChasedAll << endl;
 
 
 	while (!ChasedAll) // Начало моделирования
 	{
-		cin >> status; // Без понятия как объяснить. Во время моделирования выдает лишнее число 0. Специально делал код, который логировал все вводы - выводы. Либо оно возвращает моё же отправленное 0 (команду), либо что-то другое. Была теория, что это номер цели, но оно идёт перед временем
-		cin >> Time;  // Обновляем все данные по всем точкам 
-		Chaser.Update();  
-		for (i = 0; i < N; i++)
-			Targets[i].Update();
-		
-		dx = CurrentTarget->x - Chaser.x; // Обновляем угол, находим расстояние, можно потом в отдельную функцию вывести
-		dy = CurrentTarget->y - Chaser.y;
-		Chaser.UpdateAngle(dx, dy);
-		Distance = sqrt((dx * dx + dy * dy));
+		int ChasedCount = 0; // Счетчик пойманных. Если == N - поймали всех
+		Target* CurrentTarget = nullptr; // Указывает на ближайшую цель. Обнуляется, чтобы не указывать на пойманные цели в будущем 
 
-		if (Distance <= 0.1) // Если достигли - поймали, флаг = true
+		cin >> Time; // Обновляем все данные
+		chaser.Update();  
+		for (i = 0; i < N; i++)
+		{
+			Targets[i].Update(chaser);
+			if (!Targets[i].IsChased) // Если цель не поймана - смотрим является ли она ближайшей
+			{
+				if (CurrentTarget == nullptr || CurrentTarget->Distance > Targets[i].Distance)
+					CurrentTarget = &Targets[i];
+			}
+			else
+				ChasedCount++; 
+		}
+		
+		if(CurrentTarget != nullptr)
+			chaser.UpdateAngle(CurrentTarget->dx, CurrentTarget->dy);
+		if (ChasedCount == N) // Проверка поймали ли всех
 			ChasedAll = true;
 
-
-		cout << Chaser.Angle << endl; // Упр. команды
+		cout << chaser.Angle << endl; // Упр. команды
 		cout << ChasedAll << endl;
 	}
 	
-	CurrentTarget = nullptr;
 	delete[] Targets;
 
 	return 0;
