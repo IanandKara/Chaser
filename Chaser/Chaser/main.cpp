@@ -17,27 +17,27 @@ public:
 class Chaser : public Point // Класс преследователя
 {
 public:
-	double V, Angle;
+	double V, Angle = 0;
 
-	void UpdateAngle(double dx, double dy)
+	void UpdateAngle(double PredictX, double PredictY)
 	{
-		Angle = atan2(dy, dx); // Функция, вычисляет угол в рад.
+		Angle = atan2((PredictY - y), (PredictX - x)); // Функция, вычисляет угол в рад.
 	}
 };
 
 class Target : public Point // Класс цели
 {
 public:
-	double Distance, dx, dy;
+	double Distance = 0;
 	bool IsChased = false;
-	
+
 	void Update(Chaser &chaser)
 	{
 		Point::Update(); 
-		cin >> IsChased; // Поймана ли цель
+		cin >> IsChased;
 
-		dx = x - chaser.x;
-		dy = y - chaser.y;
+		double dx = x - chaser.x;
+		double dy = y - chaser.y;
 		Distance = sqrt((dx * dx + dy * dy)); // Расстояние от преследователя до цели, через гипотенузу
 	}
 };
@@ -58,27 +58,28 @@ int main()
 
 	while (!ChasedAll) // Начало моделирования
 	{
-		int ChasedCount = 0; // Счетчик пойманных. Если == N - поймали всех
-		Target* CurrentTarget = nullptr; // Указывает на ближайшую цель. Обнуляется, чтобы не указывать на пойманные цели в будущем 
+		ChasedAll = true; 
 
 		cin >> Time; // Обновляем все данные
-		chaser.Update();  
+		chaser.Update(); 
+		Target* CurrentTarget = nullptr; // Указывает на ближайшую цель. Обнуляется, чтобы не указывать на пойманные цели в будущем
 		for (i = 0; i < N; i++)
 		{
 			Targets[i].Update(chaser);
 			if (!Targets[i].IsChased) // Если цель не поймана - смотрим является ли она ближайшей
 			{
+				ChasedAll = false;
 				if (CurrentTarget == nullptr || CurrentTarget->Distance > Targets[i].Distance)
 					CurrentTarget = &Targets[i];
 			}
-			else
-				ChasedCount++; 
 		}
 		
-		if(CurrentTarget != nullptr)
-			chaser.UpdateAngle(CurrentTarget->dx, CurrentTarget->dy);
-		if (ChasedCount == N) // Проверка поймали ли всех
-			ChasedAll = true;
+		if (CurrentTarget != nullptr)
+		{
+			double PredictX = ((CurrentTarget->Distance / chaser.V) * CurrentTarget->Vx) + CurrentTarget->x; // Координаты, где встретятся цель и преследователь. По формуле:
+			double PredictY = ((CurrentTarget->Distance / chaser.V) * CurrentTarget->Vy) + CurrentTarget->y; // ((Время до достижения цели преследователем) *  Скорость цели) + текущее положение цели
+			chaser.UpdateAngle(PredictX, PredictY);
+		}
 
 		cout << chaser.Angle << endl; // Упр. команды
 		cout << ChasedAll << endl;
