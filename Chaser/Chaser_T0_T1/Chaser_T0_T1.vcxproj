@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{50012b10-4a21-4380-aa33-ae78c59c49ef}</ProjectGuid>
-    <RootNamespace>Chaser</RootNamespace>
+    <ProjectGuid>{8d1613a3-a236-4789-bda6-c468f561f3e3}</ProjectGuid>
+    <RootNamespace>ChaserT0T1</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
