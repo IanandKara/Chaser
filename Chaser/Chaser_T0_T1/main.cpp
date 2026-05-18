@@ -120,7 +120,7 @@ int main()
 	//Target* CurrentTarget;							// указатель на выбранную цель для преследования
 
 	//начало моделирования
-	while (Target::ChasedAll == false)
+	while (Target::ChasedAll == 0)
 	{
 		// обнуления
 		CombinationTargets.clear();
@@ -180,8 +180,7 @@ int main()
 		// условие завершения моделирования, если все пойманы выдача в отладчик 1 (завершение программы), иначе продолжаем погоню
 		if (Target::CountChased == Target::CountTargets)
 		{
-			BestCombinationTargets[0]->CalculateChaseParameters(chaser->Sx, chaser->Sy, chaser->V);
-			cout << BestCombinationTargets[0]->AngleChase << endl;
+			cout << 0 << endl; //по протоколу взаимодействия нужно выдать угол, но уже все цели посещены, поэтому просто 0
 			Target::ChasedAll = 1;
 		}
 		else
