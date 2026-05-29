@@ -5,53 +5,49 @@
 
 using namespace std;
 
-class Point // Базовый класс - точка, хранит координаты и вектора скорости объектов
+class Point // Базовый класс - точка, хранит координаты и вектора скорости точек
 {
 public:
 	double Sx, Sy, Vx, Vy;
 public:
-	virtual void UpdateParameters() = 0;
-};
-
-class Chaser : public Point // Дочерний класс - преследователь
-{
-public:
-	double V; // скорость преследователя, получаемая от отладчика
-public:
-	void SetSpeed()
-	{
-		cin >> V;
-	}
-	void UpdateParameters()
+	virtual void UpdateParameters()
 	{
 		cin >> Sx >> Sy >> Vx >> Vy;
 	}
 };
 
-class Target : public Point			// дочерний класс - цель
+class Chaser : public Point // Дочерний класс - преследователь
 {
 public:
-	bool IsChased;					// поймана ли цель
-	double TimeChase, AngleChase;	// время преследования цели и угол преследования
-	double AimX, AimY;				// координаты столкновения с преследователем
-	static int CountTargets;		// кол-во целей
-	static int CountChased;			// кол-во пойманых целей
-	static int ChasedAll;			// пойманы ли все цели
+	double V; // Скорость преследователя
+public:
+	void SetSpeed()
+	{
+		cin >> V;
+	}
+};
+
+class Target : public Point			// Дочерний класс - цель
+{
+public:
+	bool IsChased;					// Поймана ли цель
+	double ChaseTime, ChaseAngle;	// Время преследования цели и угол преследования
+	double AimX, AimY;				// Координаты столкновения с преследователем
+
+	static int CountTargets;		// Кол-во целей
+	static bool ChasedAll;			// Пойманы ли все цели
 public:
 	void UpdateParameters()
 	{
-		cin >> Sx >> Sy >> Vx >> Vy >> IsChased;
-		if (IsChased == 1)
-		{
-			CountChased++;
-		}
+		Point::UpdateParameters();
+		cin >> IsChased;
 	}
-
-	// вычисление параметров (TimeChase, AngleChase) для "охоты" на упреждение
+	
+	// Вычисление параметров (ChaseTime, ChaseAngle) для "охоты" на упреждение
 	// т.е. преследователь не гонится за целью, а наперед просчитывает оптимальную точку столкновения
-	// для примера, уравение кинематики для оси Х: SxП + VxП * t = SxЦ + VxЦ * t
-	// но поскольку неизвестных два (скорость преследователя для каждоый оси и t), то преобразуем все в квадратное уравнение и находим t
-	void CalculateChaseParameters(double SxChaser, double SyChaser, double VChaser)
+	// Для примера, уравение кинематики для оси Х: SxП + VxП * t = SxЦ + VxЦ * t
+	// Но поскольку неизвестных два (скорость преследователя для каждоый оси и t), то преобразуем все в квадратное уравнение и находим t
+	void CalculateAngle(double SxChaser, double SyChaser, double VChaser)
 	{
 		double Dx = Sx - SxChaser;
 		double Dy = Sy - SyChaser;
@@ -70,130 +66,129 @@ public:
 		{
 			if (t1 < t2)
 			{
-				TimeChase = t1;
+				ChaseTime = t1;
 			}
 			else
 			{
-				TimeChase = t2;
+				ChaseTime = t2;
 			}
 		}
 		else if (t1 > 0)
 		{
-			TimeChase = t1;
+			ChaseTime = t1;
 		}
 		else if (t2 > 0)
 		{
-			TimeChase = t2;
+			ChaseTime = t2;
 		}
 		else
 		{
-			TimeChase = sqrt(Dx * Dx + Dy * Dy) / VChaser;
+			ChaseTime = sqrt(Dx * Dx + Dy * Dy) / VChaser;
 		}
 
-		AimX = Sx + Vx * TimeChase;								// точка столкновения по оси Х
-		AimY = Sy + Vy * TimeChase;								// точка столкновения по оси Y
-		AngleChase = atan2(AimY - SyChaser, AimX - SxChaser);	// вычисление угла для попадания в точку столкновения
+		AimX = Sx + Vx * ChaseTime;								// Точка столкновения по оси Х
+		AimY = Sy + Vy * ChaseTime;								// Точка столкновения по оси Y
+		ChaseAngle = atan2(AimY - SyChaser, AimX - SxChaser);	// Вычисление угла для попадания в точку столкновения
 	}
 };
-// инициализация статических переменных
+// Инициализация статических переменных
 int Target::CountTargets = 0;
-int Target::CountChased = 0;
-int Target::ChasedAll = 0;
+bool Target::ChasedAll = false;
 
 int main()
 {
-	double t;	// время моделирования // пока непонятно как его использовать, если честно
-	double TotalTime = 0; // время поимки всех целей
-	double BestTotalTime; // кратчайшее время поимки всех целей, присвиваем 1 миллиард для корректного сравнения с временем первого полного пути
-	double BufferXChaser, BufferYChaser; // буферные координаты для запоминания положения преследователя
-	double BufferXTarget, BufferYTarget; // буферные координаты для запоминания положения целей
+	double Time;	// Время моделирования
+	double TotalTime = 0; // Время поимки всех целей
+	double BestTotalTime; // Кратчайшее время поимки всех целей, присвиваем 1 миллиард для корректного сравнения с временем первого полного пути
+	double BufferXChaser, BufferYChaser; // Буферные координаты для запоминания положения преследователя
+	double BufferXTarget, BufferYTarget; // Буферные координаты для запоминания положения целей
 	int i;
 
-	//получение начальных данных от отладчика
-	Chaser* chaser = new Chaser;	// преследователь
-	chaser->SetSpeed();				// установка скорости преследователю
+	// Получение начальных данных
+	Chaser* chaser = new Chaser;	// Преследователь
+	chaser->SetSpeed();				// Получение скорости преследователю
 
-	cin >> Target::CountTargets;						// кол-во целей
-	Target* targets = new Target[Target::CountTargets]; // массив целей
-	vector <Target*> CombinationTargets;				// массив указателей на цели для полного перебора через next_permutation из <algorithm>
+	cin >> Target::CountTargets;						// Кол-во целей
+
+	Target* Targets = new Target[Target::CountTargets]; // Массив целей
+	vector <Target*> CombinationTargets;				// Массив указателей на цели для полного перебора через next_permutation из <algorithm>
 	vector <Target*> BestCombinationTargets;
-	//Target* CurrentTarget;							// указатель на выбранную цель для преследования
 
-	//начало моделирования
-	while (Target::ChasedAll == 0)
+	// Начало моделирования
+	while (!Target::ChasedAll)
 	{
-		// обнуления
+		// Обнуления
+		Target::ChasedAll = true;
 		CombinationTargets.clear();
 		BestCombinationTargets.clear();
 		BestTotalTime = 1e9;
-		Target::CountChased = 0;
-		//CurrentTarget = nullptr;
 
-		// обновление параметров моделирования
-		cin >> t;
+		// Обновление параметров моделирования
+		cin >> Time;
 		chaser->UpdateParameters(); BufferXChaser = chaser->Sx; BufferYChaser = chaser->Sy;
 		for (i = 0; i < Target::CountTargets; i++)
 		{
-			targets[i].UpdateParameters();
+			Targets[i].UpdateParameters();
 
 		}
 
-		//заполнение массива для полного перебора непосещенных целей
+		// Заполнение массива для полного перебора непосещенных целей
 		for (i = 0; i < Target::CountTargets; i++)
 		{
-			if (targets[i].IsChased == false)
+			if (Targets[i].IsChased == false)
 			{
-				CombinationTargets.push_back(&targets[i]);
+				CombinationTargets.push_back(&Targets[i]);
+				Target::ChasedAll = false;
 			}
 		}
 
-		// полный перебор вариантов полного пути преследователя и выбор оптимального
+		// Полный перебор вариантов полного пути преследователя и выбор оптимального
 		do {
-			// расчеты для данной комбинации пути
+			// Расчеты для данной комбинации пути
 			for (i = 0; i < CombinationTargets.size(); i++)
 			{
-				CombinationTargets[i]->CalculateChaseParameters(chaser->Sx, chaser->Sy, chaser->V);
+				CombinationTargets[i]->CalculateAngle(chaser->Sx, chaser->Sy, chaser->V);
 				if (i != 0)
-				{																							// это для возвращения цели на место
-					CombinationTargets[i]->Sx = BufferXTarget; CombinationTargets[i]->Sy = BufferYTarget;	// поскольку дальше в цикле цель i+1 смещается на время погони цели i
+				{																							// Возвращение цели на место
+					CombinationTargets[i]->Sx = BufferXTarget; CombinationTargets[i]->Sy = BufferYTarget;	// Поскольку дальше в цикле цель i+1 смещается на время погони цели i
 				}																							// и на следующей итерации цель, которая была i+1 становится i и возвращается на место благодаря буферу
-				TotalTime = TotalTime + CombinationTargets[i]->TimeChase;									// для вычисления общего времени пути
-				chaser->Sx = CombinationTargets[i]->AimX; chaser->Sy = CombinationTargets[i]->AimY;			// якобы преследователь догнал цель, чтобы дальше вычисления велись от этих координат
+				TotalTime = TotalTime + CombinationTargets[i]->ChaseTime;									// для вычисления общего времени пути
+				chaser->Sx = CombinationTargets[i]->AimX; chaser->Sy = CombinationTargets[i]->AimY;			// чтобы дальше вычисления велись от координат пойманной цели
 				if (i < CombinationTargets.size() - 1)
 				{
-					BufferXTarget = CombinationTargets[i + 1]->Sx; BufferYTarget = CombinationTargets[i + 1]->Sy;				// запись в буфер координат цели i+1
-					CombinationTargets[i + 1]->Sx = CombinationTargets[i + 1]->Sx + CombinationTargets[i + 1]->Vx * TotalTime;	// сдвиг координаты x цели i + 1 по общему времени погони, для моделирования погони для данной комбинации пути 
-					CombinationTargets[i + 1]->Sy = CombinationTargets[i + 1]->Sy + CombinationTargets[i + 1]->Vy * TotalTime;	// сдвиг координаты н цели i + 1 по общему времени погони
+					BufferXTarget = CombinationTargets[i + 1]->Sx; BufferYTarget = CombinationTargets[i + 1]->Sy;				// Запись в буфер координат цели i+1
+					CombinationTargets[i + 1]->Sx = CombinationTargets[i + 1]->Sx + CombinationTargets[i + 1]->Vx * TotalTime;	// Сдвиг координаты x цели i + 1 по общему времени погони, для моделирования погони для данной комбинации пути 
+					CombinationTargets[i + 1]->Sy = CombinationTargets[i + 1]->Sy + CombinationTargets[i + 1]->Vy * TotalTime;	// Сдвиг координаты н цели i + 1 по общему времени погони
 				}
 			}
-			// определение лучшей комбинации пути
+			// Определение лучшей комбинации пути
 			if (BestTotalTime > TotalTime)
 			{
 				BestTotalTime = TotalTime;
 				BestCombinationTargets = CombinationTargets;
 			}
-			TotalTime = 0; // сброс для вычисления времени для следующей комбинации
-			chaser->Sx = BufferXChaser; chaser->Sy = BufferYChaser; // возвращаем преследователя на его место
+			TotalTime = 0; // Сброс для вычисления времени для следующей комбинации
+			chaser->Sx = BufferXChaser; chaser->Sy = BufferYChaser; // Возвращаем преследователя на его место
 
 		} while (next_permutation(CombinationTargets.begin(), CombinationTargets.end()));	// Переставляет элементы массива местами (Пр: 123, 132, 213, 231...) 
 
-		// условие завершения моделирования, если все пойманы выдача в отладчик 1 (завершение программы), иначе продолжаем погоню
-		if (Target::CountChased == Target::CountTargets)
+		// Вывод упр. команд
+		if (Target::ChasedAll)
 		{
-			cout << 0 << endl; //по протоколу взаимодействия нужно выдать угол, но уже все цели посещены, поэтому просто 0
-			Target::ChasedAll = 1;
+			cout << 0 << endl;
 		}
 		else
 		{
-			BestCombinationTargets[0]->CalculateChaseParameters(chaser->Sx, chaser->Sy, chaser->V);
-			cout << BestCombinationTargets[0]->AngleChase << endl;
+			BestCombinationTargets[0]->CalculateAngle(chaser->Sx, chaser->Sy, chaser->V);
+			cout << BestCombinationTargets[0]->ChaseAngle << endl;
 		}
+
 		cout << Target::ChasedAll << endl;
 	}
 
-	// очистка памяти
+	// Очистка памяти
 	delete chaser;
-	delete[] targets;
+	delete[] Targets;
 
 	return 0;
 }

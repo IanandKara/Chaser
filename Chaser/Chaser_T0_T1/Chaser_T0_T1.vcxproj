@@ -24,6 +24,7 @@
     <ProjectGuid>{8d1613a3-a236-4789-bda6-c468f561f3e3}</ProjectGuid>
     <RootNamespace>ChaserT0T1</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>Chaser_T0_T1</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
